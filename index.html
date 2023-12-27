@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내년도 고사본수 추정 계산기 v1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+        input[type="number"], input[type="text"] {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: calc(100% - 24px);
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .info {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>내년도 고사본수 추정 계산기 v1</h2>
+        <p>허가없는 배포를 금지합니다(M-JKIM)</p>
+        <div>
+            <label>5월 일조율 (45~65%):</label>
+            <input type="number" id="sunshineMay" min="45" max="65" required>
+        </div>
+        <div>
+            <label>2월 평균상대습도 (50~65%):</label>
+            <input type="number" id="humidityFeb" min="50" max="65" required>
+        </div>
+        <div>
+            <label>1월 최고기온 (12~18°C):</label>
+            <input type="number" id="tempJan" min="12" max="18" required>
+        </div>
+        <div>
+            <label>3월 최고기온 (18~25°C):</label>
+            <input type="number" id="tempMar" min="18" max="25" required>
+        </div>
+        <button id="calculateParams">파라미터 계산</button>
+        <div id="parameterInfo" class="info"></div>
+        <div id="modelInfo" class="info"></div>
+        <div id="mortalityRiskInfo" class="info"></div>
+        <div id="deadTreesInput" class="info" style="display: none;">
+            <label>지금까지 죽은 나무수 (9월까지):</label>
+            <input type="number" id="deadTrees" min="0">
+            <button id="calculateTrees">고사본수 계산</button>
+        </div>
+        <div id="expectedMortality" class="info"></div>
+    </div>
+
+    <script>
+        var alpha, beta;
+
+        document.getElementById('calculateParams').addEventListener('click', function() {
+            var sunshineMay = parseFloat(document.getElementById('sunshineMay').value);
+            var humidityFeb = parseFloat(document.getElementById('humidityFeb').value);
+            var tempJan = parseFloat(document.getElementById('tempJan').value);
+            var tempMar = parseFloat(document.getElementById('tempMar').value);
+            var x = 5; // 고정된 x 값
+
+            if (sunshineMay >= 45 && sunshineMay <= 65 && humidityFeb >= 50 && humidityFeb <= 65 &&
+                tempJan >= 12 && tempJan <= 18 && tempMar >= 18 && tempMar <= 25) {
+                alpha = sunshineMay * (-0.08308) + humidityFeb * (-0.08109) + 15.79531;
+                beta = tempJan * 0.23912 + tempMar * 0.07331 - 2.82784;
+            } else {
+                alpha = 7.279; // 기본값
+                beta = 2.260;  // 기본값
+                document.getElementById('modelInfo').innerHTML = '값이 범위를 초과하여 기본모델을 사용할게요.';
+            }
+
+            var mortalityRisk = Math.exp(-Math.pow(x / alpha, beta)) * 100;
+            document.getElementById('parameterInfo').innerHTML = '파라미터는 α = ' + alpha.toFixed(3) + ', β = ' + beta.toFixed(3) + '입니다.';
+            document.getElementById('mortalityRiskInfo').innerHTML = '9월 이후부터 내년 4월 까지 예상되는 고사위험은 ' + mortalityRisk.toFixed(3) + '%입니다.';
+            document.getElementById('deadTreesInput').style.display = 'block';
+        });
+
+        document.getElementById('calculateTrees').addEventListener('click', function() {
+            var deadTrees = parseFloat(document.getElementById('deadTrees').value);
+            var x = 5; // 고정된 x 값
+            var mortalityRisk = Math.exp(-Math.pow(x / alpha, beta)) * 100;
+            var expectedMortality = (deadTrees / (100 - mortalityRisk)) * mortalityRisk;
+            document.getElementById('expectedMortality').innerHTML = '9월 이후부터 내년 4월 까지 예상되는 고사본 수는 ' + expectedMortality.toFixed(3) + '본입니다.';
+        });
+    </script>
+</body>
+</html>
